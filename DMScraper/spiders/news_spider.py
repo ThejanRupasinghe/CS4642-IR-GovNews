@@ -3,26 +3,28 @@ import scrapy
 
 class NewsSpider(scrapy.Spider):
     name = "news"
+
+    # Adds all page urls
     start_urls = [
         'http://powermin.gov.lk/english/?cat=14'
     ]
+    for i in range(2, 41):
+        start_urls.append("http://powermin.gov.lk/english/?cat=14&paged=" + str(i))
 
     def parse(self, response):
-        # follow links to author pages
+        # follow links to article page with "Read more" button link
         for href in response.css('div.post a.button::attr(href)'):
-            print(href)
             yield response.follow(href, self.parse_news_page)
-
-        # follow pagination links
-        for href in response.css('li.next a::attr(href)'):
-            yield response.follow(href, self.parse)
 
     def parse_news_page(self, response):
         def extract_with_css(query):
             return response.css(query).extract()
 
+        name = extract_with_css('div.post p::text')[3]
+        name = name.encode('ascii', errors='ignore')
+
         yield {
-            'name': extract_with_css('div.post p::text')
+            'name': name
             # 'birthdate': extract_with_css('.author-born-date::text'),
             # 'bio': extract_with_css('.author-description::text'),
         }
