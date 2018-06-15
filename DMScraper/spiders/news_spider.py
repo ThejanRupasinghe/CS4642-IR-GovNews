@@ -1,4 +1,5 @@
 import scrapy
+import json
 
 
 class NewsSpider(scrapy.Spider):
@@ -8,6 +9,7 @@ class NewsSpider(scrapy.Spider):
     start_urls = [
         'http://powermin.gov.lk/english/?cat=14'
     ]
+
     for i in range(2, 41):
         start_urls.append("http://powermin.gov.lk/english/?cat=14&paged=" + str(i))
 
@@ -17,14 +19,44 @@ class NewsSpider(scrapy.Spider):
             yield response.follow(href, self.parse_news_page)
 
     def parse_news_page(self, response):
-        def extract_with_css(query):
-            return response.css(query).extract()
 
-        name = extract_with_css('div.post p::text')[3]
-        name = name.encode('ascii', errors='ignore')
+        # scrapping date
+        date_month = response.xpath('//div[@class="inner-t"]/a/span[@class="post-date"]/text()').extract_first()
+        date_arr = response.xpath('//div[@class="inner-t"]/a/span')
+        date = ""
+        for raw in date_arr:
+            if not raw.xpath("@class").extract():
+                date += raw.xpath('text()').extract_first().encode('ascii', errors='ignore')
+        date += " " + date_month
 
-        yield {
-            'name': name
-            # 'birthdate': extract_with_css('.author-born-date::text'),
-            # 'bio': extract_with_css('.author-description::text'),
-        }
+        # scrapping title of the article
+        title = response.xpath('//div[@class="heading bott-15"]/h3/a/text()').extract_first().encode('ascii',
+                                                                                                     errors='ignore')
+        # article text
+        text_arr = response.xpath('//div[@class="post"]/p')
+        text = ""
+        for para in text_arr:
+            if (para.xpath("@class").extract() == []) and para.xpath("@align").extract() == []:
+                raw_text = para.xpath('text()').extract_first()
+                if raw_text is not None:
+                    text += raw_text.encode('ascii', errors='ignore')
+
+        if not (text == "" or text == "\n\n"):
+            output = {
+                'date': date,
+                'title': title,
+                'text': text,
+                'url': response.url
+            }
+
+            data_file = open("scrapped_data.json", "a+")
+            data_file.write(json.dumps(output, indent=2, sort_keys=True))
+            data_file.write(",\n")
+            data_file.close()
+
+            yield {
+                'date': date,
+                'title': title,
+                'text': text,
+                'url': response.url
+            }
