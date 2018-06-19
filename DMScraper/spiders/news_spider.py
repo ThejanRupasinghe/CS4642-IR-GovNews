@@ -10,7 +10,7 @@ class NewsSpider(scrapy.Spider):
         'http://powermin.gov.lk/english/?cat=14'
     ]
 
-    for i in range(2, 41):
+    for i in range(2, 46):
         start_urls.append("http://powermin.gov.lk/english/?cat=14&paged=" + str(i))
 
     def parse(self, response):
@@ -40,6 +40,7 @@ class NewsSpider(scrapy.Spider):
                 raw_text = para.xpath('text()').extract_first()
                 if raw_text is not None:
                     text += raw_text.encode('ascii', errors='ignore')
+                    text += "\n"
 
         if not (text == "" or text == "\n\n"):
             output = {
@@ -49,9 +50,16 @@ class NewsSpider(scrapy.Spider):
                 'url': response.url
             }
 
-            data_file = open("scrapped_data.json", "a+")
-            data_file.write(json.dumps(output, indent=2, sort_keys=True))
-            data_file.write(",\n")
+            # data_file = open("scrapped_data.json", "a+")
+            # data_file.write(json.dumps(output, indent=2, sort_keys=True))
+            # data_file.write(",\n")
+            # data_file.close()
+
+            url = response.url
+            file_name = url[-4:]
+
+            data_file = open("data/" + file_name + ".txt", "w+")
+            data_file.write(url + "\n\n" + date + "\n\n" + title + "\n\n" + text)
             data_file.close()
 
             yield {
