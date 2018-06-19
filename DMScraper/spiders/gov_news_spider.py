@@ -10,7 +10,7 @@ class GovNewsSpider(scrapy.Spider):
         'https://www.dgi.gov.lk/news/latest-news?limitstart=0'
     ]
 
-    for i in range(1, 41):
+    for i in range(1, 128):
         start_urls.append("https://www.dgi.gov.lk/news/latest-news?start=" + str(i * 10))
 
     def parse(self, response):
